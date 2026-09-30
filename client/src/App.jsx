@@ -871,7 +871,7 @@ function Layout() {
     ["/tasks", "My Tasks", ListTodo],
     ["/stats", "Statistics", BarChart3],
   ];
-  const edit = (t) => setForm(t || null);
+  const edit = (t) => setForm(t ?? {});
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b bg-white px-4 py-2">
