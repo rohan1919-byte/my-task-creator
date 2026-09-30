@@ -139,26 +139,28 @@ const L= ({ t, children }) => (
 );
 
 function TaskForm({ task, onClose }) {
-  const [f, setF] = useState(
-    task
-      ? {
-          ...task,
-          dueDate: dstr(task.dueAt),
-          custom: !CATS.includes(task.category),
-        }
-      : {
-          title: "",
-          description: "",
-          priority: "medium",
-          status: "pending",
-          dueDate: "",
-          dueTime: "",
-          category: "Work",
-          reminder: "due-date",
-          notes: "",
-          custom: false,
-        },
-  );
+  const [f, setF] = useState(() => {
+  if (task) {
+    return {
+      ...task,
+      dueDate: dstr(task.dueAt),
+      custom: !CATS.includes(task.category),
+    };
+  }
+
+  return {
+    title: "",
+    description: "",
+    priority: "medium",
+    status: "pending",
+    dueDate: "",
+    dueTime: "",
+    category: "Work",
+    reminder: "due-date",
+    notes: "",
+    custom: false,
+  };
+});
   const [errs, setErrs] = useState("");
   const set = (k) => (e) => {
     setF((prev) => ({
@@ -859,12 +861,13 @@ function Layout() {
           <Route path="/stats" element={<Stats />} />
         </Routes>
       </main>
-      {form !== null && (
-        <TaskForm
-          task={form?._id ? form : null}
-          onClose={() => setForm(null)}
-        />
-      )}
+     {form !== null && (
+  <TaskForm
+    key="task-form"
+    task={form?._id ? form : null}
+    onClose={() => setForm(null)}
+  />
+)}
     </div>
   );
 }
