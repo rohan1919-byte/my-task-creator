@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback,useRef  } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -139,86 +139,112 @@ const L= ({ t, children }) => (
 );
 
 function TaskForm({ task, onClose }) {
-  const [f, setF] = useState(() => {
-  if (task) {
-    return {
-      ...task,
-      dueDate: dstr(task.dueAt),
-      custom: !CATS.includes(task.category),
-    };
-  }
+  const formRef = useRef(null);
 
-  return {
-    title: "",
-    description: "",
-    priority: "medium",
-    status: "pending",
-    dueDate: "",
-    dueTime: "",
-    category: "Work",
-    reminder: "due-date",
-    notes: "",
-    custom: false,
-  };
-});
+  const [custom, setCustom] = useState(
+    task ? !CATS.includes(task.category) : false
+  );
+
   const [errs, setErrs] = useState("");
-  const set = (k) => (e) => {
-    setF((prev) => ({
-      ...prev,
-      [k]: e.target.value,
-    }));
-  };
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!f.title.trim()) return setErrs("Title is required");
-    if (!f.dueDate) return setErrs("Due date is required");
-    if (!f.dueTime) return setErrs("Due time is required");
-    if (f.description.length > 2000 || f.notes.length > 2000)
-      return setErrs("Description/notes max 2000 characters");
+
+    const formData = new FormData(e.currentTarget);
+
+    const f = {
+      title: formData.get("title")?.trim() || "",
+      description: formData.get("description") || "",
+      priority: formData.get("priority") || "medium",
+      status: formData.get("status") || "pending",
+      dueDate: formData.get("dueDate") || "",
+      dueTime: formData.get("dueTime") || "",
+      category: formData.get("category") || "",
+      reminder: formData.get("reminder") || "due-date",
+      notes: formData.get("notes") || "",
+      custom,
+    };
+
+    if (!f.title) {
+      setErrs("Title is required");
+      return;
+    }
+
+    if (!f.dueDate) {
+      setErrs("Due date is required");
+      return;
+    }
+
+    if (!f.dueTime) {
+      setErrs("Due time is required");
+      return;
+    }
+
+    if (f.description.length > 2000 || f.notes.length > 2000) {
+      setErrs("Description/notes max 2000 characters");
+      return;
+    }
+
     try {
       task
         ? await api.put("/tasks/" + task._id, f)
         : await api.post("/tasks", f);
+
       toast.success(
-        task ? "Task updated successfully." : "Task created successfully.",
+        task
+          ? "Task updated successfully."
+          : "Task created successfully."
       );
+
       changed();
       onClose();
     } catch (x) {
-      setErrs(x.friendly);
+      setErrs(x.friendly || "Something went wrong");
     }
   };
+
   const I =
-     "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm";
-  
+    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none";
+
   return (
     <Modal onClose={onClose}>
-      <form onSubmit={submit} className="space-y-3">
+      <form ref={formRef} onSubmit={submit} className="space-y-3">
         <h2 className="text-lg font-semibold">
           {task ? "Edit Task" : "Add Task"}
         </h2>
+
         {errs && (
-          <p className="rounded bg-red-50 p-2 text-sm text-red-600">{errs}</p>
+          <p className="rounded bg-red-50 p-2 text-sm text-red-600">
+            {errs}
+          </p>
         )}
+
         <L t="Title *">
-  <input
-    autoFocus
-    className={I}
-    value={f.title}
-    onChange={set("title")}
-  />
-</L>
-        <L t="Description">
-          <textarea
+          <input
+            name="title"
+            autoFocus
+            defaultValue={task?.title || ""}
             className={I}
-            rows={2}
-            value={f.description}
-            onChange={set("description")}
+            type="text"
           />
         </L>
+
+        <L t="Description">
+          <textarea
+            name="description"
+            defaultValue={task?.description || ""}
+            className={I}
+            rows={2}
+          />
+        </L>
+
         <div className="grid grid-cols-2 gap-3">
           <L t="Priority">
-            <select className={I} value={f.priority} onChange={set("priority")}>
+            <select
+              name="priority"
+              defaultValue={task?.priority || "medium"}
+              className={I}
+            >
               {["low", "medium", "high", "urgent"].map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -226,8 +252,13 @@ function TaskForm({ task, onClose }) {
               ))}
             </select>
           </L>
+
           <L t="Status">
-            <select className={I} value={f.status} onChange={set("status")}>
+            <select
+              name="status"
+              defaultValue={task?.status || "pending"}
+              className={I}
+            >
               {["pending", "in-progress", "completed"].map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -235,40 +266,54 @@ function TaskForm({ task, onClose }) {
               ))}
             </select>
           </L>
+
           <L t="Due Date *">
             <input
+              name="dueDate"
               type="date"
+              defaultValue={task ? dstr(task.dueAt) : ""}
               className={I}
-              value={f.dueDate}
-              onChange={set("dueDate")}
             />
           </L>
+
           <L t="Due Time *">
             <input
+              name="dueTime"
               type="time"
+              defaultValue={task?.dueTime || ""}
               className={I}
-              value={f.dueTime}
-              onChange={set("dueTime")}
             />
           </L>
+
           <L t="Category">
             <select
+              name="category"
+              value={custom ? "__c" : task?.category || "Work"}
+              onChange={(e) => {
+                if (e.target.value === "__c") {
+                  setCustom(true);
+                } else {
+                  setCustom(false);
+                }
+              }}
               className={I}
-              value={f.custom ? "__c" : f.category}
-              onChange={(e) =>
-                e.target.value === "__c"
-                  ? setF({ ...f, custom: true, category: "" })
-                  : setF({ ...f, custom: false, category: e.target.value })
-              }
             >
               {CATS.map((c) => (
-                <option key={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
+
               <option value="__c">Custom…</option>
             </select>
           </L>
+
           <L t="Reminder">
-            <select className={I} value={f.reminder} onChange={set("reminder")}>
+            <select
+              name="reminder"
+              defaultValue={task?.reminder || "due-date"}
+              className={I}
+            >
               {REM.map(([v, l]) => (
                 <option key={v} value={v}>
                   {l}
@@ -277,27 +322,36 @@ function TaskForm({ task, onClose }) {
             </select>
           </L>
         </div>
-        {f.custom && (
-          <input
-            className={I}
-            placeholder="Custom category"
-            value={f.category}
-            onChange={set("category")}
-          />
+
+        {custom && (
+          <L t="Custom Category">
+            <input
+              name="category"
+              type="text"
+              defaultValue={task?.category || ""}
+              placeholder="Custom category"
+              className={I}
+            />
+          </L>
         )}
+
         <L t="Notes">
           <textarea
+            name="notes"
+            defaultValue={task?.notes || ""}
             className={I}
             rows={2}
-            value={f.notes}
-            onChange={set("notes")}
           />
         </L>
+
         <div className="flex justify-end gap-2">
           <Btn type="button" c="border" onClick={onClose}>
             Cancel
           </Btn>
-          <Primary type="submit">{task ? "Save" : "Create"}</Primary>
+
+          <Primary type="submit">
+            {task ? "Save" : "Create"}
+          </Primary>
         </div>
       </form>
     </Modal>
@@ -863,7 +917,6 @@ function Layout() {
       </main>
      {form !== null && (
   <TaskForm
-    key="task-form"
     task={form?._id ? form : null}
     onClose={() => setForm(null)}
   />
