@@ -131,6 +131,12 @@ function Confirm({ onYes, onNo }) {
     </Modal>
   );
 }
+const L= ({ t, children }) => (
+  <label className="block text-xs font-medium text-gray-600">
+    {t}
+    {children}
+  </label>
+);
 
 function TaskForm({ task, onClose }) {
   const [f, setF] = useState(
@@ -182,12 +188,7 @@ function TaskForm({ task, onClose }) {
   };
   const I =
     "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none";
-  const L = ({ t, children }) => (
-    <label className="block text-xs font-medium text-gray-600">
-      {t}
-      {children}
-    </label>
-  );
+  
   return (
     <Modal onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
