@@ -187,7 +187,7 @@ function TaskForm({ task, onClose }) {
     }
   };
   const I =
-    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none";
+     "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm";
   
   return (
     <Modal onClose={onClose}>
@@ -199,8 +199,13 @@ function TaskForm({ task, onClose }) {
           <p className="rounded bg-red-50 p-2 text-sm text-red-600">{errs}</p>
         )}
         <L t="Title *">
-          <input className={I} value={f.title} onChange={set("title")} />
-        </L>
+  <input
+    autoFocus
+    className={I}
+    value={f.title}
+    onChange={set("title")}
+  />
+</L>
         <L t="Description">
           <textarea
             className={I}
